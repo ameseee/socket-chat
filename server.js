@@ -1,16 +1,34 @@
-const express = require('express');
-const app = express();
-const http = require('http').Server(app);
-const io = require('socket.io')(http);
+var app = require('express')();
+var http = require('http').Server(app);
+var io = require('socket.io')(http);
 
-const path = require('path');
-
-app.use(express.static('public'));
-
-app.get('/', function (req, res){
-  res.sendFile(path.join(__dirname, '/public/index.html'));
+app.get('/', function(req, res) {
+  res.sendFile(__dirname + '/public/index.html');
 });
 
-http.listen(process.env.PORT || 3000, function(){
-  console.log('Your server is up and running on Port 3000. Good job!');
+io.on('connection', (socket) => {
+  socket.broadcast.emit('new connection',
+  { text: 'A friend has connected' });
+
+  socket.on('chat message', (msg) => {
+    io.emit('chat message', msg);
+  });
+
+  socket.on('typing', (nickname) => {
+    io.emit('friend typing', nickname);
+  });
+  
+  socket.on('empty', () => {
+    io.emit('not typing');
+  });
+
+  socket.on('disconnect', () => {
+    io.emit('lost connection',
+    { text: 'Someone has disconnected' });
+  });
+
+});
+
+http.listen(3000, function() {
+  console.log('listening on *:3000');
 });

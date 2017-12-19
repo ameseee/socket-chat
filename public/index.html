@@ -1,29 +1,77 @@
 <!doctype html>
 <html>
   <head>
-    <title>Right Now</title>
+    <title>Socket.IO chat</title>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      body { font: 13px Helvetica, Arial; }
+      #chat-section { width: 90%; margin: 0 auto; }
+      form { background: #000; padding: 3px; position: fixed; bottom: 0; width: 90%; }
+      form input { border: 0; padding: 10px; width: 90%; margin-right: .5%; }
+      form button { width: 9%; background: #9A3CF2; border: none; padding: 10px; }
+      #messages { list-style-type: none; margin: 0; padding: 0; }
+      #messages li { padding: 5px 10px; }
+      #messages li:nth-child(odd) { background: #eee; }
+      #new-connection { background-color: #F2FDE7; }
+      #no-connection { background-color: #F2E7FD; }
+    </style>
   </head>
   <body>
-
-    <h1>Right Now</h1>
-
-    <!--
-    Right now,
-    Hey, it's your tomorrow
-    Right now,
-    C'mon, it's everything
-    Right now,
-    Catch a magic moment, do it
-    Right here and now
-    It means everything
-    -->
-
-    <section class="messages">
+    <h1>Socket Chat</h1>
+    <section id="nickname-section">
+      <p>Nickname:</p>
+      <input id="nickname-input" type="text" name="" value="" />
+    </section>
+    <section id="chat-section">
+      <ul id="messages"></ul>
+      <p id="typing"></p>
+      <form action="">
+        <input id="m" autocomplete="off" />
+        <button>Send</button>
+      </form>
     </section>
 
-    <script src="/jquery.js"></script>
     <script src="/socket.io/socket.io.js"></script>
-    <script src="/application.js"></script>
+    <script src="https://code.jquery.com/jquery-1.11.1.js"></script>
+    <script>
+      $(function () {
+        var socket = io();
 
+        $('form').submit(function() {
+          socket.emit('chat message', $('#m').val());
+          $('#m').val('');
+          return false;
+        });
+
+        $('form').on('keydown', () => {
+          if ($('#m').val() !== '') {
+            socket.emit('typing', $('#nickname-input').val());
+          } else {
+            socket.emit('empty')
+          }
+        });
+
+        socket.on('new connection', (msg) => {
+          $('#messages').append($('<li id="new-connection">').text(msg.text));
+        });
+
+        socket.on('chat message', (msg) => {
+          $('#messages').append($('<li>').text(msg));
+        });
+
+        socket.on('friend typing', (nickname) => {
+          $('#typing').text(`${nickname} is typing...`);
+        });
+
+        socket.on('not typing', () => {
+          $('#typing').text('');
+        });
+
+        socket.on('lost connection', (msg) => {
+          $('#messages').append($('<li id="no-connection">').text(msg.text));
+        });
+
+      });
+    </script>
   </body>
 </html>
